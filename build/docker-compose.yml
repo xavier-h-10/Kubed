@@ -1,0 +1,7 @@
+version: "3"
+services:
+  api-server:
+    build: ../apiserver/run
+    image: api-server:v1
+    container_name: api-server
+    network_mode: host
