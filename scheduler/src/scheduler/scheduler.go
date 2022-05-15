@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
-	"minik8s/apiObject"
+	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/scheduler/src/filter"
 	"minik8s/scheduler/src/selector"
+	"minik8s/util/httputil"
 	"minik8s/util/topicutil"
-	"os"
 )
 
 type Scheduler interface {
@@ -18,33 +19,28 @@ type Scheduler interface {
 }
 
 func New() Scheduler {
-	return &scheduler{selector.New()}
+	return &scheduler{
+		filter.Default(),
+		selector.DefaultFactory.NewSelector(selector.Random),
+	}
 }
 
 type scheduler struct {
+	filter   filter.Filter
 	selector selector.Selector
 }
 
-func getTestNodes() []*apiObject.Node {
-	var nodes []*apiObject.Node
-	node := &apiObject.Node{}
-	node.ApiVersion = "v1"
-	node.Kind = "Node"
-	hostname, _ := os.Hostname()
-	node.Metadata.Name = hostname
-	node.Metadata.Namespace = "default"
-	nodes = append(nodes, node)
-	return nodes
+// getNodesFromApiServer get nodes from api-server
+func (s *scheduler) getNodesFromApiServer() (nodes []*entity.NodeStatus) {
+	_ = httputil.GetAndUnmarshal(url.Prefix+url.NodeURL, &nodes)
+	return
 }
 
-// getNodes should get nodes from api server
-func (s *scheduler) getNodes() []*apiObject.Node {
-	// for test now
-	return getTestNodes()
+func (s *scheduler) getNodes() []*entity.NodeStatus {
+	return s.getNodesFromApiServer()
 }
 
 func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
-	//fmt.Printf("Schedule %v\n", podUpdate)
 	// Step 1: Get nodes from api-server
 	nodes := s.getNodes()
 
@@ -52,21 +48,27 @@ func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
 		return fmt.Errorf("no available node now")
 	}
 
-	// Step 2: Select one node
-	node := s.selector.Select(nodes)
+	// Step 2: Preliminary Filter
+	filtered := s.filter.Filter(&podUpdate.Target, nodes)
+	if len(filtered) == 0 {
+		return fmt.Errorf("no suitable node now")
+	}
+
+	// Step 3: Select one node
+	node := s.selector.Select(filtered)
 	if node == nil {
 		return fmt.Errorf("no suitable node now")
 	}
 
-	// Step 3: Prepare for the message
-	nodeName := node.Metadata.Name
+	// Step 4: Prepare for the message
+	nodeName := node.Hostname
 	topic := topicutil.PodUpdateTopic(nodeName)
 	updateMsg, err := json.Marshal(podUpdate)
 	if err != nil {
 		return err
 	}
 
-	// Step 4: Send msg to such node
+	// Step 5: Send msg to such node
 	fmt.Printf("Send msg to %s: [%v]%v\n", topic, podUpdate.Action.String(), podUpdate.Target.Name())
 	listwatch.Publish(topic, updateMsg)
 

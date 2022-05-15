@@ -17,18 +17,18 @@ import (
 var logManager = logger.Log("ReplicaSet Manager")
 var syncSignal = struct{}{}
 
-type controller struct {
-	cacheManager cache.Manager
-	workers      map[types.UID]Worker
-}
-
 type Controller interface {
 	Run()
 	Sync(podStatus *entity.PodStatus)
 }
 
+type controller struct {
+	cacheManager cache.Manager
+	workers      map[types.UID]Worker
+}
+
 func (c *controller) Sync(podStatus *entity.PodStatus) {
-	needSync := podStatus.Lifecycle == entity.PodDeleted || podStatus.Lifecycle == entity.PodRunning
+	needSync := podStatus.Lifecycle == entity.PodDeleted || podStatus.Lifecycle == entity.PodCreated
 	if UID, exists := podStatus.Labels[runtime.KubernetesReplicaSetUIDLabel]; exists && needSync {
 		if worker, stillWorking := c.workers[UID]; stillWorking {
 			worker.SyncChannel() <- syncSignal
