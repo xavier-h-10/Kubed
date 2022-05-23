@@ -70,5 +70,3 @@ A: Killed by `Jenkins`. Try to add `BUILD_ID=dontKillMe` to the shell script.
 Q: Why `go: command not found`?
 
 A: Please add environment variables it needs manually to `Jenkins`.
-
-![](readme-images/Jenkins_Env.png)
