@@ -71,7 +71,7 @@ func (m *manager) publishPodStatus(podStatuses runtime.PodStatuses) {
 	topic := topicutil.PodStatusTopic()
 	for _, podStatus := range podStatuses {
 		pod := m.podCache.Get(podStatus.ID)
-		if pod == nil || len(pod.(*apiObject.Pod).Containers()) != len(podStatus.ContainerStatuses) {
+		if pod == nil || len(pod.(*apiObject.Pod).Containers())+1 != len(podStatus.ContainerStatuses) {
 			continue
 		}
 		e := podStatus.ToEntity()
