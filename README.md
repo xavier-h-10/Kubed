@@ -8,8 +8,10 @@ Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 
 ### Project overview
 
-<img src="https://img.shields.io/badge/license-Apache-blue" alt="">
-<img src="https://img.shields.io/badge/go-1.16-blue" alt="">
+<left class="left">
+  <img src="https://img.shields.io/badge/license-Apache-blue" alt="">
+  <img src="https://img.shields.io/badge/go-1.16-blue" alt="">
+</left>
 
 #### Dependencies
 <ul>
