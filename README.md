@@ -1,8 +1,8 @@
-# Minik8s
+# Kubed
 
 ## Description
 
-Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
+A lightweight Kubernetes-based serverless framework, implemented by Go.
 
 ## Structure
 
